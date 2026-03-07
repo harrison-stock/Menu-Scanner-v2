@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Menu Scanner — Harrison Stock Fitness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0f1115;
+      --bg-card: #1a1d23;
+      --bg-input: #22262e;
+      --border: #2e3340;
+      --text: #e8e9ec;
+      --text-muted: #8b8f9a;
+      --accent: #c5f536;
+      --accent-dim: #a3cc2b;
+      --danger: #f54e4e;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- HEADER ---- */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header .brand {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ---- VIEWS ---- */
+    .view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .view.active {
+      display: flex;
+    }
+
+    /* ---- FORMS ---- */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    .field-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ---- GOAL SELECTOR ---- */
+    .goal-options {
+      display: flex;
+      gap: 8px;
+    }
+
+    .goal-option {
+      flex: 1;
+      padding: 12px 8px;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .goal-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .goal-option.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(197, 245, 54, 0.08);
+    }
+
+    /* ---- CHECKBOXES ---- */
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .checkbox-pill {
+      padding: 8px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .checkbox-pill:hover {
+      border-color: var(--text-muted);
+    }
+
+    .checkbox-pill.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(197, 245, 54, 0.08);
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dim);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 0;
+      font-family: inherit;
+    }
+
+    /* ---- SCANNER ---- */
+    .scanner-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .camera-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 48px 24px;
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .camera-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .camera-btn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .or-divider {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 8px 0;
+    }
+
+    #camera-input {
+      display: none;
+    }
+
+    .image-preview {
+      display: none;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .image-preview img {
+      width: 100%;
+      border-radius: var(--radius);
+      max-height: 300px;
+      object-fit: cover;
+    }
+
+    .image-preview .remove-image {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- LOADING ---- */
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .loading.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    /* ---- RESULTS ---- */
+    .results-content {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .results-content strong {
+      color: var(--accent);
+      display: block;
+      margin-top: 16px;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .results-content strong:first-child {
+      margin-top: 0;
+    }
+
+    .results-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    /* ---- CTA ---- */
+    .cta-box {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(197, 245, 54, 0.06);
+      border: 1px solid rgba(197, 245, 54, 0.15);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .cta-box p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .cta-box a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* ---- EDIT PROFILE LINK ---- */
+    .edit-profile-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-summary {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .profile-summary span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ---- SCAN COUNT ---- */
+    .scan-count {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    /* ---- ERROR ---- */
+    .error-msg {
+      background: rgba(245, 78, 78, 0.1);
+      border: 1px solid rgba(245, 78, 78, 0.3);
+      color: var(--danger);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ---- FOOTER ---- */
+    .footer {
+      text-align: center;
+      padding: 24px 0 8px;
+      margin-top: auto;
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ============ LANDING VIEW ============ -->
+  <div id="view-landing" class="view active">
+    <div class="header">
+      <div class="brand">Harrison Stock Fitness</div>
+      <h1>What should I actually order?</h1>
+      <p>Scan any menu. Get honest recommendations based on your goal. No guilt, no gimmicks.</p>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px;">
+      <div style="text-align:center; color:var(--text-muted); font-size:14px; line-height:1.8;">
+        <p style="margin-bottom:16px;"><strong style="color:var(--text);">1.</strong> Tell us your goal and any dietary needs</p>
+        <p style="margin-bottom:16px;"><strong style="color:var(--text);">2.</strong> Point your camera at the menu</p>
+        <p><strong style="color:var(--text);">3.</strong> Get practical recommendations in seconds</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;">
+      <button class="btn btn-primary" onclick="showView('profile')">Get started</button>
+    </div>
+
+    <div class="footer">
+      <p>Built by <a href="https://harrisonstock.co.uk" target="_blank">Harrison Stock</a>, personal trainer in Exeter.</p>
+    </div>
+  </div>
+
+  <!-- ============ PROFILE VIEW ============ -->
+  <div id="view-profile" class="view">
+    <div class="header" style="margin-bottom:24px;">
+      <div class="brand">Harrison Stock Fitness</div>
+      <h1>Quick profile</h1>
+      <p>Takes 30 seconds. Helps me give you better recommendations.</p>
+    </div>
+
+    <div id="profile-error" class="error-msg"></div>
+
+    <div class="field">
+      <label for="input-name">First name</label>
+      <input type="text" id="input-name" placeholder="e.g. Dave">
+    </div>
+
+    <div class="field">
+      <label for="input-email">Email</label>
+      <input type="email" id="input-email" placeholder="you@email.com">
+      <div class="field-hint">So Harrison can send you useful stuff. No spam.</div>
+    </div>
+
+    <div class="field">
+      <label>What's your goal?</label>
+      <div class="goal-options">
+        <button class="goal-option" data-goal="cutting" onclick="selectGoal(this)">Cutting</button>
+        <button class="goal-option" data-goal="maintenance" onclick="selectGoal(this)">Maintenance</button>
+        <button class="goal-option" data-goal="bulking" onclick="selectGoal(this)">Bulking</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="input-calories">Daily calorie target (optional)</label>
+      <input type="number" id="input-calories" placeholder="e.g. 2000">
+      <div class="field-hint">Not sure? Leave it blank and we'll estimate.</div>
+    </div>
+
+    <div class="field">
+      <label>Any dietary restrictions?</label>
+      <div class="checkbox-group">
+        <button class="checkbox-pill" data-restriction="None" onclick="toggleRestriction(this)">None</button>
+        <button class="checkbox-pill" data-restriction="Vegetarian" onclick="toggleRestriction(this)">Vegetarian</button>
+        <button class="checkbox-pill" data-restriction="Vegan" onclick="toggleRestriction(this)">Vegan</button>
+        <button class="checkbox-pill" data-restriction="Gluten-free" onclick="toggleRestriction(this)">Gluten-free</button>
+        <button class="checkbox-pill" data-restriction="Dairy-free" onclick="toggleRestriction(this)">Dairy-free</button>
+        <button class="checkbox-pill" data-restriction="Halal" onclick="toggleRestriction(this)">Halal</button>
+      </div>
+    </div>
+
+    <div style="margin-top:auto; padding-top:16px;">
+      <button class="btn btn-primary" onclick="saveProfile()">Save and scan</button>
+    </div>
+  </div>
+
+  <!-- ============ SCANNER VIEW ============ -->
+  <div id="view-scanner" class="view">
+    <div class="edit-profile-bar">
+      <div class="profile-summary">
+        <span id="display-name"></span> · <span id="display-goal"></span>
+      </div>
+      <button class="btn-link" onclick="showView('profile')">Edit profile</button>
+    </div>
+
+    <div class="header" style="margin-bottom:16px;">
+      <h1 style="font-size:22px;">Scan a menu</h1>
+      <p>Take a photo or type in what's on offer.</p>
+    </div>
+
+    <div id="scanner-error" class="error-msg"></div>
+
+    <div id="image-preview" class="image-preview">
+      <img id="preview-img" src="" alt="Menu preview">
+      <button class="remove-image" onclick="clearImage()">&times;</button>
+    </div>
+
+    <div id="scanner-inputs">
+      <label class="camera-btn" for="camera-input">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.04l-.821 1.315Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+        </svg>
+        Take a photo of the menu
+      </label>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handleImage(event)">
+
+      <div class="or-divider">or type it in</div>
+
+      <div class="field">
+        <textarea id="input-menu-text" placeholder="e.g. Chicken burger, fish and chips, caesar salad, margherita pizza..."></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:auto; padding-top:8px;">
+      <button id="btn-analyse" class="btn btn-primary" onclick="analyse()">What should I order?</button>
+      <div id="scan-count" class="scan-count"></div>
+    </div>
+  </div>
+
+  <!-- ============ LOADING VIEW ============ -->
+  <div id="view-loading" class="view">
+    <div class="loading active">
+      <div class="spinner"></div>
+      <p>Reading your menu...</p>
+    </div>
+  </div>
+
+  <!-- ============ RESULTS VIEW ============ -->
+  <div id="view-results" class="view">
+    <div class="header" style="margin-bottom:16px;">
+      <div class="brand">Harrison Stock Fitness</div>
+      <h1 style="font-size:22px;">Your recommendations</h1>
+    </div>
+
+    <div id="results-content" class="results-content"></div>
+
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="resetScanner()">Scan another menu</button>
+    </div>
+
+    <div class="cta-box">
+      <p>Want help building a full nutrition plan?</p>
+      <a href="https://harrisonstock.co.uk" target="_blank">Book a free call with Harrison</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- STATE ----
+  let currentImage = null;
+  let currentImageType = null;
+
+  // ---- VIEW MANAGEMENT ----
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ---- PROFILE ----
+  let selectedGoal = null;
+  let selectedRestrictions = [];
+
+  function selectGoal(el) {
+    document.querySelectorAll('.goal-option').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedGoal = el.dataset.goal;
+  }
+
+  function toggleRestriction(el) {
+    const val = el.dataset.restriction;
+
+    if (val === 'None') {
+      selectedRestrictions = ['None'];
+      document.querySelectorAll('.checkbox-pill').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      return;
+    }
+
+    // Remove 'None' if selecting something else
+    selectedRestrictions = selectedRestrictions.filter(r => r !== 'None');
+    document.querySelector('[data-restriction="None"]').classList.remove('selected');
+
+    if (el.classList.contains('selected')) {
+      el.classList.remove('selected');
+      selectedRestrictions = selectedRestrictions.filter(r => r !== val);
+    } else {
+      el.classList.add('selected');
+      selectedRestrictions.push(val);
+    }
+  }
+
+  function saveProfile() {
+    const name = document.getElementById('input-name').value.trim();
+    const email = document.getElementById('input-email').value.trim();
+    const calories = document.getElementById('input-calories').value.trim();
+    const errorEl = document.getElementById('profile-error');
+
+    errorEl.style.display = 'none';
+
+    if (!name) {
+      errorEl.textContent = 'Please enter your first name.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (!email || !email.includes('@')) {
+      errorEl.textContent = 'Please enter a valid email address.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (!selectedGoal) {
+      errorEl.textContent = 'Please select your goal.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    const profile = {
+      name,
+      email,
+      goal: selectedGoal,
+      calorieTarget: calories ? parseInt(calories) : null,
+      restrictions: selectedRestrictions.filter(r => r !== 'None'),
+    };
+
+    localStorage.setItem('ms_profile', JSON.stringify(profile));
+
+    document.getElementById('display-name').textContent = profile.name;
+    document.getElementById('display-goal').textContent = profile.goal;
+
+    showView('scanner');
+    updateScanCount();
+  }
+
+  function loadProfile() {
+    const stored = localStorage.getItem('ms_profile');
+    if (!stored) return null;
+
+    try {
+      const profile = JSON.parse(stored);
+      document.getElementById('display-name').textContent = profile.name;
+      document.getElementById('display-goal').textContent = profile.goal;
+
+      // Restore form state
+      document.getElementById('input-name').value = profile.name || '';
+      document.getElementById('input-email').value = profile.email || '';
+      document.getElementById('input-calories').value = profile.calorieTarget || '';
+
+      if (profile.goal) {
+        const goalBtn = document.querySelector(`[data-goal="${profile.goal}"]`);
+        if (goalBtn) selectGoal(goalBtn);
+      }
+
+      if (profile.restrictions && profile.restrictions.length > 0) {
+        profile.restrictions.forEach(r => {
+          const pill = document.querySelector(`[data-restriction="${r}"]`);
+          if (pill) toggleRestriction(pill);
+        });
+      }
+
+      return profile;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ---- IMAGE HANDLING ----
+  function handleImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    currentImageType = file.type;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      currentImage = dataUrl.split(',')[1]; // base64 only
+
+      document.getElementById('preview-img').src = dataUrl;
+      document.getElementById('image-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImage() {
+    currentImage = null;
+    currentImageType = null;
+    document.getElementById('image-preview').style.display = 'none';
+    document.getElementById('camera-input').value = '';
+  }
+
+  // ---- SCAN RATE LIMITING ----
+  function getTodayKey() {
+    return 'ms_scans_' + new Date().toISOString().split('T')[0];
+  }
+
+  function getScansToday() {
+    return parseInt(localStorage.getItem(getTodayKey()) || '0');
+  }
+
+  function incrementScans() {
+    const count = getScansToday() + 1;
+    localStorage.setItem(getTodayKey(), count.toString());
+    return count;
+  }
+
+  function updateScanCount() {
+    const remaining = 3 - getScansToday();
+    const el = document.getElementById('scan-count');
+    if (remaining <= 0) {
+      el.textContent = "You've used all 3 scans for today. Come back tomorrow.";
+      document.getElementById('btn-analyse').disabled = true;
+    } else {
+      el.textContent = remaining + ' scan' + (remaining === 1 ? '' : 's') + ' remaining today';
+      document.getElementById('btn-analyse').disabled = false;
+    }
+  }
+
+  // ---- ANALYSE ----
+  async function analyse() {
+    const menuText = document.getElementById('input-menu-text').value.trim();
+    const errorEl = document.getElementById('scanner-error');
+    errorEl.style.display = 'none';
+
+    if (!currentImage && !menuText) {
+      errorEl.textContent = 'Take a photo of the menu or type in what is on offer.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (getScansToday() >= 3) {
+      errorEl.textContent = "You've used all 3 scans for today. Come back tomorrow.";
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    const profile = JSON.parse(localStorage.getItem('ms_profile'));
+
+    showView('loading');
+
+    try {
+      const body = { profile };
+
+      if (currentImage) {
+        body.image = currentImage;
+        body.imageType = currentImageType;
+      } else {
+        body.menuText = menuText;
+      }
+
+      const res = await fetch('/api/analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        throw new Error('API returned ' + res.status);
+      }
+
+      const data = await res.json();
+
+      incrementScans();
+
+      // Render results with basic formatting
+      const formatted = data.result
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+      document.getElementById('results-content').innerHTML = formatted;
+      showView('results');
+    } catch (err) {
+      console.error(err);
+      showView('scanner');
+      errorEl.textContent = 'Something went wrong. Check your connection and try again.';
+      errorEl.style.display = 'block';
+    }
+  }
+
+  // ---- RESET ----
+  function resetScanner() {
+    clearImage();
+    document.getElementById('input-menu-text').value = '';
+    document.getElementById('scanner-error').style.display = 'none';
+    showView('scanner');
+    updateScanCount();
+  }
+
+  // ---- INIT ----
+  (function init() {
+    const profile = loadProfile();
+    if (profile && profile.name && profile.email && profile.goal) {
+      showView('scanner');
+      updateScanCount();
+    } else {
+      showView('landing');
+    }
+  })();
+</script>
+
+</body>
+</html>
