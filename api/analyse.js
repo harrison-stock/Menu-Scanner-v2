@@ -68,10 +68,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { image, imageType, menuText, profile } = req.body;
+    const { image, imageType, document, menuText, profile } = req.body;
 
     if (!profile || !profile.goal) {
       return res.status(400).json({ error: "Profile with goal is required" });
+    }
+
+    if (!image && !document && !menuText) {
+      return res
+        .status(400)
+        .json({ error: "Either a menu image, document, or menu text is required" });
     }
 
     const goalMap = {
@@ -112,6 +118,26 @@ export default async function handler(req, res) {
           ],
         },
       ];
+    } else if (document) {
+      messages = [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: document,
+              },
+            },
+            {
+              type: "text",
+              text: `Here's the menu. My details:\n${userContext}\n\nWhat should I order?`,
+            },
+          ],
+        },
+      ];
     } else if (menuText) {
       messages = [
         {
@@ -119,10 +145,6 @@ export default async function handler(req, res) {
           content: `Here's what's on the menu:\n\n${menuText}\n\nMy details:\n${userContext}\n\nWhat should I order?`,
         },
       ];
-    } else {
-      return res
-        .status(400)
-        .json({ error: "Either a menu image or menu text is required" });
     }
 
     const response = await client.messages.create({
