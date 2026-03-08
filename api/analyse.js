@@ -62,6 +62,14 @@ If the menu image is unclear or unreadable, say so plainly: "I can't make out en
 
 If there are genuinely no good options for the person's goal, be honest about it: "This menu's quite limited for what you're after. Here's what I'd do to make the best of it..."`;
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
