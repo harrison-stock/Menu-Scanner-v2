@@ -62,16 +62,30 @@ If the menu image is unclear or unreadable, say so plainly: "I can't make out en
 
 If there are genuinely no good options for the person's goal, be honest about it: "This menu's quite limited for what you're after. Here's what I'd do to make the best of it..."`;
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { image, imageType, menuText, profile } = req.body;
+    const { image, imageType, document, menuText, profile } = req.body;
 
     if (!profile || !profile.goal) {
       return res.status(400).json({ error: "Profile with goal is required" });
+    }
+
+    if (!image && !document && !menuText) {
+      return res
+        .status(400)
+        .json({ error: "Either a menu image, document, or menu text is required" });
     }
 
     const goalMap = {
@@ -112,6 +126,26 @@ export default async function handler(req, res) {
           ],
         },
       ];
+    } else if (document) {
+      messages = [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: document,
+              },
+            },
+            {
+              type: "text",
+              text: `Here's the menu. My details:\n${userContext}\n\nWhat should I order?`,
+            },
+          ],
+        },
+      ];
     } else if (menuText) {
       messages = [
         {
@@ -119,10 +153,6 @@ export default async function handler(req, res) {
           content: `Here's what's on the menu:\n\n${menuText}\n\nMy details:\n${userContext}\n\nWhat should I order?`,
         },
       ];
-    } else {
-      return res
-        .status(400)
-        .json({ error: "Either a menu image or menu text is required" });
     }
 
     const response = await client.messages.create({

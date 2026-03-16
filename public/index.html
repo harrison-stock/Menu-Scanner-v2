@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -441,6 +442,48 @@
       display: none;
     }
 
+    /* ---- DOCUMENT PREVIEW ---- */
+    .document-preview {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+
+    .document-preview svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    .document-preview .doc-name {
+      font-size: 14px;
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .document-preview .remove-doc {
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
     /* ---- FOOTER ---- */
     .footer {
       text-align: center;
@@ -572,6 +615,24 @@
       </label>
       <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handleImage(event)">
 
+      <div class="or-divider">or upload a menu file</div>
+
+      <div id="document-preview" class="document-preview">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+        <span class="doc-name" id="document-name"></span>
+        <button class="remove-doc" onclick="clearDocument()" aria-label="Remove file">&times;</button>
+      </div>
+
+      <label class="camera-btn" for="document-input" id="document-upload-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+        Upload a menu (PDF or Word)
+      </label>
+      <input type="file" id="document-input" accept=".pdf,.doc,.docx" onchange="handleDocument(event)" style="display:none">
+
       <div class="or-divider">or type it in</div>
 
       <div class="field">
@@ -618,6 +679,7 @@
   // ---- STATE ----
   let currentImage = null;
   let currentImageType = null;
+  let currentDocument = null; // base64 PDF data
 
   // ---- VIEW MANAGEMENT ----
   function showView(name) {
@@ -759,6 +821,76 @@
     document.getElementById('camera-input').value = '';
   }
 
+  // ---- DOCUMENT HANDLING ----
+  function handleDocument(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const errorEl = document.getElementById('scanner-error');
+    errorEl.style.display = 'none';
+
+    // Clear any existing image selection
+    clearImage();
+
+    const isPdf = file.type === 'application/pdf';
+    const isDocx = file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const isDoc = file.name.endsWith('.doc') || file.type === 'application/msword';
+
+    if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        currentDocument = e.target.result.split(',')[1]; // base64 only
+        showDocumentPreview(file.name);
+      };
+      reader.readAsDataURL(file);
+    } else if (isDocx) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        mammoth.extractRawText({ arrayBuffer: e.target.result })
+          .then(function(result) {
+            const text = result.value.trim();
+            if (!text) {
+              errorEl.textContent = 'Could not extract text from this Word document. Try copying the menu text manually instead.';
+              errorEl.style.display = 'block';
+              clearDocument();
+              return;
+            }
+            document.getElementById('input-menu-text').value = text;
+            showDocumentPreview(file.name);
+          })
+          .catch(function() {
+            errorEl.textContent = 'Could not read this Word document. Try copying the menu text manually instead.';
+            errorEl.style.display = 'block';
+            clearDocument();
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (isDoc) {
+      errorEl.textContent = 'Older .doc files are not supported. Save the menu as .docx or PDF and try again.';
+      errorEl.style.display = 'block';
+      document.getElementById('document-input').value = '';
+    } else {
+      errorEl.textContent = 'Please upload a PDF or Word document (.pdf, .docx).';
+      errorEl.style.display = 'block';
+      document.getElementById('document-input').value = '';
+    }
+  }
+
+  function showDocumentPreview(filename) {
+    document.getElementById('document-name').textContent = filename;
+    document.getElementById('document-preview').style.display = 'flex';
+    document.getElementById('document-upload-btn').style.display = 'none';
+  }
+
+  function clearDocument() {
+    currentDocument = null;
+    document.getElementById('document-preview').style.display = 'none';
+    document.getElementById('document-upload-btn').style.display = 'flex';
+    document.getElementById('document-input').value = '';
+    // Also clear any text that was auto-populated from a Word doc
+    // (only if user hasn't edited it — we don't track that, so leave it)
+  }
+
   // ---- SCAN RATE LIMITING ----
   function getTodayKey() {
     return 'ms_scans_' + new Date().toISOString().split('T')[0];
@@ -792,8 +924,8 @@
     const errorEl = document.getElementById('scanner-error');
     errorEl.style.display = 'none';
 
-    if (!currentImage && !menuText) {
-      errorEl.textContent = 'Take a photo of the menu or type in what is on offer.';
+    if (!currentImage && !currentDocument && !menuText) {
+      errorEl.textContent = 'Take a photo, upload a menu file, or type in what is on offer.';
       errorEl.style.display = 'block';
       return;
     }
@@ -814,6 +946,8 @@
       if (currentImage) {
         body.image = currentImage;
         body.imageType = currentImageType;
+      } else if (currentDocument) {
+        body.document = currentDocument;
       } else {
         body.menuText = menuText;
       }
@@ -850,6 +984,7 @@
   // ---- RESET ----
   function resetScanner() {
     clearImage();
+    clearDocument();
     document.getElementById('input-menu-text').value = '';
     document.getElementById('scanner-error').style.display = 'none';
     showView('scanner');
