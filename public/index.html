@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -679,7 +680,6 @@
   // ---- STATE ----
   let currentImage = null;
   let currentImageType = null;
-  let currentDocument = null; // base64 PDF data
 
   // ---- VIEW MANAGEMENT ----
   function showView(name) {
@@ -839,10 +839,39 @@
     if (isPdf) {
       const reader = new FileReader();
       reader.onload = function(e) {
-        currentDocument = e.target.result.split(',')[1]; // base64 only
-        showDocumentPreview(file.name);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        pdfjsLib.getDocument({ data: e.target.result }).promise
+          .then(function(pdf) {
+            const pagePromises = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+              pagePromises.push(
+                pdf.getPage(i).then(function(page) {
+                  return page.getTextContent().then(function(content) {
+                    return content.items.map(function(item) { return item.str; }).join(' ');
+                  });
+                })
+              );
+            }
+            return Promise.all(pagePromises);
+          })
+          .then(function(pages) {
+            const text = pages.join('\n').trim();
+            if (!text) {
+              errorEl.textContent = "This PDF doesn't contain selectable text. It's probably a scanned image — take a photo of the menu instead.";
+              errorEl.style.display = 'block';
+              document.getElementById('document-input').value = '';
+              return;
+            }
+            document.getElementById('input-menu-text').value = text;
+            showDocumentPreview(file.name);
+          })
+          .catch(function() {
+            errorEl.textContent = 'Could not read this PDF. Try copying the menu text manually instead.';
+            errorEl.style.display = 'block';
+            document.getElementById('document-input').value = '';
+          });
       };
-      reader.readAsDataURL(file);
+      reader.readAsArrayBuffer(file);
     } else if (isDocx) {
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -883,7 +912,6 @@
   }
 
   function clearDocument() {
-    currentDocument = null;
     document.getElementById('document-preview').style.display = 'none';
     document.getElementById('document-upload-btn').style.display = 'flex';
     document.getElementById('document-input').value = '';
@@ -924,7 +952,7 @@
     const errorEl = document.getElementById('scanner-error');
     errorEl.style.display = 'none';
 
-    if (!currentImage && !currentDocument && !menuText) {
+    if (!currentImage && !menuText) {
       errorEl.textContent = 'Take a photo, upload a menu file, or type in what is on offer.';
       errorEl.style.display = 'block';
       return;
@@ -946,8 +974,6 @@
       if (currentImage) {
         body.image = currentImage;
         body.imageType = currentImageType;
-      } else if (currentDocument) {
-        body.document = currentDocument;
       } else {
         body.menuText = menuText;
       }
